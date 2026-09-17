@@ -1,6 +1,6 @@
 # Playwright gaming web automation
 
-Agency template: **API sets up state, UI proves the gaming journey**. Auth, lobby, shop, gameplay session, profile, and leaderboard.
+ **API sets up state, UI proves the gaming journey**. Auth, lobby, shop, gameplay session, profile, and leaderboard.
 
 Target app: bundled **Arcade Portal** demo (`demo-app/`) — runs at `http://localhost:3000` via Playwright `webServer`.
 
