@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Login</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div class="topbar">
+        <div class="brand">Arcade <span>Portal</span></div>
+      </div>
+
+      <section class="panel" data-test="login-page">
+        <h1>Player login</h1>
+        <p class="muted">Sign in to access the lobby and saved progress.</p>
+
+        <form id="login-form" class="grid" style="margin-top: 1rem">
+          <div>
+            <label for="email">Email</label>
+            <input id="email" data-test="login-email" type="email" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" data-test="login-password" type="password" autocomplete="current-password" required />
+          </div>
+          <button class="primary" data-test="login-submit" type="submit">Sign in</button>
+        </form>
+
+        <p id="login-error" class="error" data-test="login-error"></p>
+        <p class="muted" style="margin-top: 1rem">
+          Need an account?
+          <a href="/register.html" data-test="register-link">Create one</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+      window.ArcadeAuth.requireGuest();
+
+      document.getElementById('login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        window.ArcadeAuth.showError('login-error', '');
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        try {
+          const payload = await window.ArcadeAuth.api('/api/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          window.ArcadeAuth.setSession(payload.token, payload.user);
+          window.location.href = '/lobby.html';
+        } catch (error) {
+          window.ArcadeAuth.showError('login-error', error.message);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "playwright-gaming-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright gaming web automation: API seeding, hybrid UI flows, POM, fixtures, typed env config, negative cases, CI-ready Arcade Portal demo.",
+  "scripts": {
+    "demo": "node demo-app/server.js",
+    "test": "playwright test",
+    "test:sequential": "cross-env SEQUENTIAL=1 playwright test --workers=1",
+    "test:smoke": "playwright test tests/smoke tests/authenticated",
+    "test:hybrid": "playwright test tests/hybrid",
+    "test:negative": "playwright test tests/smoke/negative.spec.ts",
+    "test:e2e": "playwright test tests/e2e",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Game</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div class="topbar">
+        <div class="brand">Arcade <span>Portal</span></div>
+        <a class="button secondary" href="/lobby.html" data-test="back-to-lobby">Back to lobby</a>
+      </div>
+
+      <section class="panel" data-test="game-page">
+        <h1 id="game-title">Loading game...</h1>
+
+        <div class="grid two" style="margin-bottom: 1rem">
+          <div>
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty" data-test="difficulty-select">
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard (50 coin entry)</option>
+            </select>
+          </div>
+          <div>
+            <label>Session</label>
+            <p class="muted" id="session-copy" data-test="session-copy">Select difficulty and start a session.</p>
+          </div>
+        </div>
+
+        <div class="hud">
+          <div class="stat">Score: <strong id="game-score" data-test="game-score">0</strong></div>
+          <div class="stat">Status: <strong id="game-status" data-test="game-status" data-state="idle">Idle</strong></div>
+          <div class="hud">
+            <button id="start-game-btn" class="primary" data-test="start-game-btn" type="button">Start session</button>
+            <button id="pause-game-btn" class="secondary" data-test="pause-game-btn" type="button" disabled>Pause</button>
+            <button id="end-game-btn" class="secondary" data-test="end-game-btn" type="button" disabled>End session</button>
+          </div>
+        </div>
+
+        <canvas id="game-canvas" data-test="game-canvas" width="720" height="320"></canvas>
+      </section>
+    </main>
+
+    <div id="results-modal" class="modal" data-test="results-modal">
+      <div class="modal-card">
+        <h2>Session complete</h2>
+        <p>Score: <strong data-test="results-score">0</strong></p>
+        <p>Coins earned: <strong data-test="results-coins">0</strong></p>
+        <div class="modal-actions">
+          <a class="button primary" href="/lobby.html" data-test="results-back-lobby">Back to lobby</a>
+          <a class="button secondary" href="/leaderboard.html" data-test="results-view-leaderboard">View leaderboard</a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/game.js"></script>
+    <script>
+      if (!window.ArcadeAuth.requireAuth()) {
+        throw new Error('Auth required');
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get('slug') ?? 'brick-blitz';
+      const titles = {
+        'brick-blitz': 'Brick Blitz',
+        'star-dodge': 'Star Dodge',
+      };
+
+      document.getElementById('game-title').textContent = titles[slug] ?? 'Arcade Game';
+
+      const controller = window.ArcadeGame.createGame({
+        slug,
+        title: titles[slug] ?? 'Arcade Game',
+        onResults: (payload) => {
+          document.querySelector('[data-test="results-score"]').textContent = String(payload.score);
+          document.querySelector('[data-test="results-coins"]').textContent = String(payload.coinsEarned);
+          document.getElementById('results-modal').classList.add('open');
+        },
+      });
+
+      document.getElementById('start-game-btn').addEventListener('click', async () => {
+        const difficulty = document.getElementById('difficulty').value;
+        try {
+          const session = await window.ArcadeAuth.api(`/api/games/${slug}/session`, {
+            method: 'POST',
+            body: JSON.stringify({ difficulty }),
+          });
+          document.getElementById('session-copy').textContent =
+            `Session ${session.sessionId.slice(0, 8)} · ${session.difficulty} · fee ${session.entryFee}`;
+          document.getElementById('difficulty').disabled = true;
+          controller.startSession();
+        } catch (error) {
+          document.getElementById('session-copy').textContent = error.message;
+        }
+      });
+
+      document.getElementById('pause-game-btn').addEventListener('click', () => controller.togglePause());
+      document.getElementById('end-game-btn').addEventListener('click', () => controller.endSession());
+    </script>
+  </body>
+</html>

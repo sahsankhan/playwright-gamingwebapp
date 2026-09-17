@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Leaderboard</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div id="portal-topbar"></div>
+
+      <section class="panel" data-test="leaderboard-page">
+        <h1>Global leaderboard</h1>
+        <p class="muted">Top players ranked by high score.</p>
+        <p>Your rank: <strong data-test="player-rank">-</strong></p>
+
+        <table class="table" style="margin-top: 1rem">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th>High score</th>
+              <th>Games played</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/portal.js"></script>
+    <script>
+      if (!window.ArcadeAuth.requireAuth()) {
+        throw new Error('Auth required');
+      }
+
+      window.ArcadePortal.renderTopbar('/leaderboard.html');
+
+      async function loadLeaderboard() {
+        await window.ArcadePortal.refreshWallet();
+        const payload = await window.ArcadeAuth.api('/api/leaderboard');
+        const user = window.ArcadeAuth.getUser();
+
+        document.querySelector('[data-test="player-rank"]').textContent =
+          payload.currentPlayerRank ? `#${payload.currentPlayerRank}` : 'Unranked';
+
+        const body = document.getElementById('leaderboard-body');
+        body.innerHTML = '';
+
+        payload.entries.forEach((entry, index) => {
+          const row = document.createElement('tr');
+          if (entry.username === user.username) {
+            row.classList.add('highlight');
+          }
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td data-test="leaderboard-player-${entry.username}">
+              ${entry.username}${entry.vip ? ' <span class="tag">VIP</span>' : ''}
+            </td>
+            <td>${entry.highScore}</td>
+            <td>${entry.gamesPlayed}</td>
+          `;
+          body.appendChild(row);
+        });
+      }
+
+      loadLeaderboard().catch(() => {
+        window.ArcadeAuth.clearSession();
+        window.location.href = '/login.html';
+      });
+    </script>
+  </body>
+</html>

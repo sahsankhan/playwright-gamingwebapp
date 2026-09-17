@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Profile</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div id="portal-topbar"></div>
+
+      <section class="panel" data-test="profile-page">
+        <h1>Player profile</h1>
+        <div class="grid three" style="margin-top: 1rem">
+          <div class="stat-card">
+            <p class="muted">Username</p>
+            <p><strong data-test="profile-username">-</strong></p>
+          </div>
+          <div class="stat-card">
+            <p class="muted">Email</p>
+            <p><strong data-test="profile-email">-</strong></p>
+          </div>
+          <div class="stat-card">
+            <p class="muted">Avatar</p>
+            <p><strong data-test="profile-avatar">-</strong></p>
+          </div>
+          <div class="stat-card">
+            <p class="muted">High score</p>
+            <p><strong data-test="profile-high-score">0</strong></p>
+          </div>
+          <div class="stat-card">
+            <p class="muted">Games played</p>
+            <p><strong data-test="profile-games-played">0</strong></p>
+          </div>
+          <div class="stat-card">
+            <p class="muted">Total score</p>
+            <p><strong data-test="profile-total-score">0</strong></p>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem">
+          <h2>Inventory</h2>
+          <div id="inventory-list" class="inventory-list" data-test="profile-inventory"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/portal.js"></script>
+    <script>
+      if (!window.ArcadeAuth.requireAuth()) {
+        throw new Error('Auth required');
+      }
+
+      window.ArcadePortal.renderTopbar('/profile.html');
+
+      const itemLabels = {
+        'neon-trail': 'Neon Trail',
+        'coin-doubler': 'Coin Doubler',
+        'vip-badge': 'VIP Badge',
+      };
+
+      window.ArcadeAuth.api('/api/me')
+        .then(async (profile) => {
+          await window.ArcadePortal.refreshWallet();
+          document.querySelector('[data-test="profile-username"]').textContent = profile.username;
+          document.querySelector('[data-test="profile-email"]').textContent = profile.email;
+          document.querySelector('[data-test="profile-avatar"]').textContent = profile.avatar;
+          document.querySelector('[data-test="profile-high-score"]').textContent = String(profile.highScore);
+          document.querySelector('[data-test="profile-games-played"]').textContent = String(profile.gamesPlayed);
+          document.querySelector('[data-test="profile-total-score"]').textContent = String(profile.totalScore);
+
+          const inventory = document.getElementById('inventory-list');
+          inventory.innerHTML = '';
+          if (!profile.inventory.length) {
+            inventory.innerHTML = '<span data-test="inventory-empty">No items yet</span>';
+            return;
+          }
+
+          profile.inventory.forEach((itemId) => {
+            const chip = document.createElement('span');
+            chip.dataset.test = `inventory-${itemId}`;
+            chip.textContent = itemLabels[itemId] ?? itemId;
+            inventory.appendChild(chip);
+          });
+        })
+        .catch(() => {
+          window.ArcadeAuth.clearSession();
+          window.location.href = '/login.html';
+        });
+    </script>
+  </body>
+</html>

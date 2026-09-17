@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Register</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div class="topbar">
+        <div class="brand">Arcade <span>Portal</span></div>
+      </div>
+
+      <section class="panel" data-test="register-page">
+        <h1>Create player account</h1>
+        <p class="muted">Register once, then jump into the game lobby.</p>
+
+        <form id="register-form" class="grid" style="margin-top: 1rem">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" data-test="register-username" required />
+          </div>
+          <div>
+            <label for="email">Email</label>
+            <input id="email" data-test="register-email" type="email" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" data-test="register-password" type="password" autocomplete="new-password" required />
+          </div>
+          <button class="primary" data-test="register-submit" type="submit">Create account</button>
+        </form>
+
+        <p id="register-error" class="error" data-test="register-error"></p>
+        <p class="muted" style="margin-top: 1rem">
+          Already registered?
+          <a href="/login.html" data-test="login-link">Sign in</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+      window.ArcadeAuth.requireGuest();
+
+      document.getElementById('register-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        window.ArcadeAuth.showError('register-error', '');
+
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        try {
+          const payload = await window.ArcadeAuth.api('/api/register', {
+            method: 'POST',
+            body: JSON.stringify({ username, email, password }),
+          });
+          window.ArcadeAuth.setSession(payload.token, payload.user);
+          window.location.href = '/lobby.html';
+        } catch (error) {
+          window.ArcadeAuth.showError('register-error', error.message);
+        }
+      });
+    </script>
+  </body>
+</html>

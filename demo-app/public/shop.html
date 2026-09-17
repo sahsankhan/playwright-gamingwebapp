@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Shop</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div id="portal-topbar"></div>
+
+      <section class="panel" data-test="shop-page">
+        <h1>Item shop</h1>
+        <p class="muted">Spend coins on cosmetics and session boosts.</p>
+        <div id="shop-list" class="grid three" style="margin-top: 1rem"></div>
+        <p id="shop-message" class="success" data-test="shop-message"></p>
+      </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/portal.js"></script>
+    <script>
+      if (!window.ArcadeAuth.requireAuth()) {
+        throw new Error('Auth required');
+      }
+
+      window.ArcadePortal.renderTopbar('/shop.html');
+
+      let ownedItems = [];
+
+      async function purchase(itemId) {
+        const message = document.getElementById('shop-message');
+        message.textContent = '';
+        message.className = 'success';
+
+        try {
+          const payload = await window.ArcadeAuth.api('/api/shop/purchase', {
+            method: 'POST',
+            body: JSON.stringify({ itemId }),
+          });
+          ownedItems = payload.inventory;
+          message.textContent = `Purchased ${payload.item.name}.`;
+          await window.ArcadePortal.refreshWallet();
+          renderShop(await window.ArcadeAuth.api('/api/shop/items'));
+        } catch (error) {
+          message.textContent = error.message;
+          message.className = 'error';
+        }
+      }
+
+      function renderShop(payload) {
+        const list = document.getElementById('shop-list');
+        list.innerHTML = '';
+
+        payload.items.forEach((item) => {
+          const owned = ownedItems.includes(item.id);
+          const card = document.createElement('article');
+          card.className = 'shop-card';
+          card.innerHTML = `
+            <h3>${item.name}</h3>
+            <p class="muted">${item.type}</p>
+            <p>${item.description}</p>
+            <div class="hud">
+              <span class="tag">${item.price} coins</span>
+              <button type="button" class="primary" data-test="buy-${item.id}" ${owned ? 'disabled' : ''}>
+                ${owned ? 'Owned' : 'Buy now'}
+              </button>
+            </div>
+          `;
+
+          if (!owned) {
+            card.querySelector(`[data-test="buy-${item.id}"]`).addEventListener('click', () => purchase(item.id));
+          }
+
+          list.appendChild(card);
+        });
+      }
+
+      async function loadShop() {
+        const profile = await window.ArcadePortal.refreshWallet();
+        ownedItems = profile.inventory ?? [];
+        renderShop(await window.ArcadeAuth.api('/api/shop/items'));
+      }
+
+      loadShop().catch(() => {
+        window.ArcadeAuth.clearSession();
+        window.location.href = '/login.html';
+      });
+    </script>
+  </body>
+</html>

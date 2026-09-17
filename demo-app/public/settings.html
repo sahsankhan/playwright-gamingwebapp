@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Settings</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div id="portal-topbar"></div>
+
+      <section class="panel" data-test="settings-page">
+        <h1>Player settings</h1>
+        <p class="muted">Update avatar and session preferences.</p>
+
+        <form id="settings-form" class="grid" style="margin-top: 1rem; max-width: 420px">
+          <div>
+            <label for="avatar">Avatar</label>
+            <select id="avatar" data-test="avatar-select">
+              <option value="rookie">Rookie</option>
+              <option value="veteran">Veteran</option>
+              <option value="legend">Legend</option>
+            </select>
+          </div>
+          <button class="primary" data-test="save-settings" type="submit">Save settings</button>
+        </form>
+
+        <p id="settings-message" class="success" data-test="settings-message"></p>
+      </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/portal.js"></script>
+    <script>
+      if (!window.ArcadeAuth.requireAuth()) {
+        throw new Error('Auth required');
+      }
+
+      window.ArcadePortal.renderTopbar('/settings.html');
+
+      async function loadSettings() {
+        const profile = await window.ArcadePortal.refreshWallet();
+        document.getElementById('avatar').value = profile.avatar ?? 'rookie';
+      }
+
+      document.getElementById('settings-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = document.getElementById('settings-message');
+        message.textContent = '';
+        message.className = 'success';
+
+        try {
+          const avatar = document.getElementById('avatar').value;
+          const payload = await window.ArcadeAuth.api('/api/profile', {
+            method: 'PATCH',
+            body: JSON.stringify({ avatar }),
+          });
+          window.ArcadeAuth.setSession(window.ArcadeAuth.getToken(), payload);
+          message.textContent = `Avatar updated to ${payload.avatar}.`;
+        } catch (error) {
+          message.textContent = error.message;
+          message.className = 'error';
+        }
+      });
+
+      loadSettings().catch(() => {
+        window.ArcadeAuth.clearSession();
+        window.location.href = '/login.html';
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcade Portal | Lobby</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div id="portal-topbar"></div>
+
+      <section class="panel" data-test="lobby-page">
+        <h1>Game lobby</h1>
+        <p class="muted">Claim rewards, browse titles, and launch a session.</p>
+
+        <div class="banner" data-test="daily-bonus-banner">
+          <div class="hud">
+            <div>
+              <strong>Daily bonus</strong>
+              <p class="muted" id="daily-bonus-copy">Claim 500 coins once per day.</p>
+            </div>
+            <button id="claim-bonus-btn" class="primary" data-test="claim-daily-bonus" type="button">Claim bonus</button>
+          </div>
+          <p id="daily-bonus-message" class="success" data-test="daily-bonus-message"></p>
+        </div>
+
+        <div class="filter-tabs">
+          <button type="button" data-filter="all" class="active" data-test="filter-all">All games</button>
+          <button type="button" data-filter="Arcade" data-test="filter-arcade">Arcade</button>
+          <button type="button" data-filter="Runner" data-test="filter-runner">Runner</button>
+        </div>
+
+        <div id="game-list" class="grid two"></div>
+      </section>
+    </main>
+
+    <div id="game-modal" class="modal" data-test="game-details-modal">
+      <div class="modal-card">
+        <h2 id="modal-title">Game details</h2>
+        <p id="modal-description" class="muted"></p>
+        <p><span class="tag" id="modal-genre"></span> <span class="muted" id="modal-fee"></span></p>
+        <div class="modal-actions">
+          <button type="button" class="secondary" data-test="close-game-modal">Close</button>
+          <button type="button" class="primary" id="modal-launch-btn" data-test="launch-from-modal">Launch game</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/portal.js"></script>
+    <script>
+      if (!window.ArcadeAuth.requireAuth()) {
+        throw new Error('Auth required');
+      }
+
+      let allGames = [];
+      let selectedSlug = null;
+
+      window.ArcadePortal.renderTopbar('/lobby.html');
+
+      function renderGames(filter = 'all') {
+        const list = document.getElementById('game-list');
+        list.innerHTML = '';
+        const visible = filter === 'all' ? allGames : allGames.filter((game) => game.genre === filter);
+
+        visible.forEach((game) => {
+          const card = document.createElement('article');
+          card.className = 'game-card';
+          card.dataset.test = `game-card-${game.slug}`;
+          card.innerHTML = `
+            <h3>${game.title}</h3>
+            <p class="muted">${game.genre}</p>
+            <p>${game.description}</p>
+            <div class="hud">
+              <button type="button" class="secondary" data-test="details-${game.slug}">View details</button>
+              <a class="button primary" data-test="play-${game.slug}" href="/game.html?slug=${game.slug}">Quick play</a>
+            </div>
+          `;
+
+          card.querySelector(`[data-test="details-${game.slug}"]`).addEventListener('click', () => openModal(game));
+          list.appendChild(card);
+        });
+      }
+
+      function openModal(game) {
+        selectedSlug = game.slug;
+        document.getElementById('modal-title').textContent = game.title;
+        document.getElementById('modal-description').textContent = game.description;
+        document.getElementById('modal-genre').textContent = game.genre;
+        document.getElementById('modal-fee').textContent =
+          game.entryFee > 0 ? `Entry fee: ${game.entryFee} coins` : 'Free to play';
+        document.getElementById('game-modal').classList.add('open');
+      }
+
+      document.querySelector('[data-test="close-game-modal"]').addEventListener('click', () => {
+        document.getElementById('game-modal').classList.remove('open');
+      });
+
+      document.getElementById('modal-launch-btn').addEventListener('click', () => {
+        if (selectedSlug) {
+          window.location.href = `/game.html?slug=${selectedSlug}`;
+        }
+      });
+
+      document.getElementById('claim-bonus-btn').addEventListener('click', async () => {
+        const message = document.getElementById('daily-bonus-message');
+        message.textContent = '';
+        try {
+          const payload = await window.ArcadeAuth.api('/api/daily-bonus', { method: 'POST' });
+          message.textContent = `Bonus claimed: +${payload.coinsAwarded} coins.`;
+          document.getElementById('claim-bonus-btn').disabled = true;
+          document.getElementById('daily-bonus-copy').textContent = 'Daily bonus claimed for today.';
+          await window.ArcadePortal.refreshWallet();
+        } catch (error) {
+          message.textContent = error.message;
+          message.className = 'error';
+        }
+      });
+
+      window.ArcadePortal.bindFilterTabs(renderGames);
+
+      async function loadLobby() {
+        const profile = await window.ArcadePortal.refreshWallet();
+        const payload = await window.ArcadeAuth.api('/api/games');
+        allGames = payload.games;
+        renderGames('all');
+
+        const today = new Date().toISOString().slice(0, 10);
+        if (profile.dailyBonusClaimedAt === today) {
+          document.getElementById('claim-bonus-btn').disabled = true;
+          document.getElementById('daily-bonus-copy').textContent = 'Daily bonus claimed for today.';
+        }
+      }
+
+      loadLobby().catch(() => {
+        window.ArcadeAuth.clearSession();
+        window.location.href = '/login.html';
+      });
+    </script>
+  </body>
+</html>
