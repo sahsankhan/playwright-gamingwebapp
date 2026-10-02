@@ -8,7 +8,7 @@ on:
 jobs:
   gaming-web:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     env:
       BASE_URL: http://localhost:3000
       DEMO_PORT: 3000
@@ -23,11 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Run tests
+      - name: Run Chromium suite
         run: npm test
+
+      - name: Run Firefox and WebKit
+        run: npx playwright test --project=firefox --project=webkit
         env:
           CI: true
 

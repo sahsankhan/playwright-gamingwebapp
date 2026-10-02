@@ -5,7 +5,8 @@
   "description": "Playwright gaming web automation: API seeding, hybrid UI flows, POM, fixtures, typed env config, negative cases, CI-ready Arcade Portal demo.",
   "scripts": {
     "demo": "node demo-app/server.js",
-    "test": "playwright test",
+    "test": "playwright test --project=setup --project=chromium --project=chromium-authenticated",
+    "test:cross-browser": "playwright test --project=chromium --project=firefox --project=webkit",
     "test:sequential": "cross-env SEQUENTIAL=1 playwright test --workers=1",
     "test:smoke": "playwright test tests/smoke tests/authenticated",
     "test:hybrid": "playwright test tests/hybrid",

@@ -44,6 +44,20 @@ export default defineConfig({
       },
     },
     {
+      name: 'firefox',
+      testMatch: /(smoke|e2e|hybrid)\/.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+    },
+    {
+      name: 'webkit',
+      testMatch: /(smoke|e2e|hybrid)\/.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Safari'],
+      },
+    },
+    {
       name: 'chromium-authenticated',
       testMatch: /authenticated\/.*\.spec\.ts/,
       dependencies: ['setup'],

@@ -41,7 +41,7 @@ Test wallet seeding: `PATCH /api/test/wallet` (set `ALLOW_TEST_SEED=false` to di
 
 ```bash
 npm install
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 copy .env.example .env
 ```
 
@@ -51,7 +51,8 @@ On macOS/Linux use `cp .env.example .env`.
 
 ```bash
 npm run demo            # Arcade Portal only
-npm test                # full suite (starts demo via webServer)
+npm test                # Chromium suite (starts demo via webServer)
+npm run test:cross-browser   # same smoke, hybrid, and e2e tests on Chromium, Firefox, and WebKit
 npm run test:smoke      # smoke + authenticated tests
 npm run test:hybrid     # API seed + UI flows
 npm run test:negative   # edge cases
@@ -60,6 +61,22 @@ npm run test:sequential # one worker, one test at a time
 npm run test:headed
 npm run report          # open HTML report
 ```
+
+## Cross-browser
+
+`npm test` stays on Chromium. That includes the signed-in tests.
+
+`npm run test:cross-browser` runs the same smoke, hybrid, and end-to-end tests on three browsers:
+
+| Project | Browser |
+|---|---|
+| `chromium` | Desktop Chrome |
+| `firefox` | Desktop Firefox |
+| `webkit` | Desktop Safari |
+
+The signed-in project is Chromium only. It reuses a saved login, so it is not repeated on Firefox or WebKit.
+
+CI installs Chromium, Firefox, and WebKit, runs `npm test`, then runs the Firefox and WebKit projects.
 
 Switch environment:
 
@@ -123,7 +140,7 @@ tests/auth.setup.ts auth state for authenticated project
 
 ## CI
 
-GitHub Actions runs `npm test` on push/PR (`CI=true` adds retries and the GitHub reporter) and uploads artifacts:
+GitHub Actions runs the Chromium suite, then the same smoke, hybrid, and end-to-end tests on Firefox and WebKit. `CI=true` adds retries and the GitHub reporter. Artifacts:
 
 | Artifact | Contents |
 |---|---|
